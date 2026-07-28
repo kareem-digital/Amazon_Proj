@@ -1,6 +1,6 @@
 # VOW Platform - Strategy Module Explained & Field-by-Field Reference Guide
 
-**Document Version:** 1.1.0 (Enhanced with Brief Parsing & Multi-Market Distribution Logic)  
+**Document Version:** 1.2.0 (Updated with Data Fee & Profile Naming Rules)  
 **Target Audience:** Product Managers, AI Engineers, Backend Engineers, Frontend Developers, QA Testers  
 **Purpose:** Comprehensive business & functional explanation of the VOW Strategy Module and all fields across the 6 wizard steps.
 
@@ -205,22 +205,26 @@ Step 4 selects the target demographic, in-market, lifestyle, and behavioral audi
 
 #### Detailed Field Explanations:
 
-1. **Audience Sets Table**
-   - **What it is**: A list of pre-curated audience target groups built from Amazon's 3,400+ consumer data segments (e.g., `Healthy snacks`, `E-Learning Seekers`).
+1. **Audience Sets Table & Three Profiles**
+   - **What it is**: A list of pre-curated audience target groups built from Amazon's 3,400+ consumer data segments (e.g., `Healthy snacks`, `E-Learning Seekers`). The agent produces three target profiles:
+     - **Narrow**: High intent, elevated precision, potential underdelivery risk.
+     - **Balanced**: Optimal mix, client recommendation.
+     - **Wide**: *(Renamed from Broad)* Maximum reach across demographic & broad interest groups.
    - **Why it is used**: Defines *who* will see the ads based on purchase history, browsing behavior, and lifestyle interests.
-   - **Business Purpose**: Ensures high relevance by reaching consumers with demonstrated buying intent. Shows VCPM fee (data usage cost per 1,000 impressions).
+   - **Business Purpose**: Reaches consumers with demonstrated buying intent. Shows VCPM fee.
 
-2. **Matching Mode (`Similar` vs `Exact`)**
+2. **Audience Data Fee (VCPM) Rules** *(David Moss Update)*
+   - **Data Source Determines Fee**: Data fees are triggered whenever **Amazon 1P data** (Lifestyle/Interest) or **3P Data Providers** (Experian) are used. Demographic targeting incurs no data fee.
+   - **No Compounding Within Provider**: Adding multiple 1P segments from Amazon incurs **1 fixed CPM data fee**, regardless of how many 1P segments are selected.
+   - **Cross-Provider Stacking**: Data fees stack **only** when matching segments across *different* data providers (e.g. Amazon 1P + Experian 3P).
+   - **Effective CPM Formula**: $\text{Effective CPM} = \text{Base Deal CPM} + \text{Stacked VCPM Data Fees}$.
+
+3. **Matching Mode (`Similar` vs `Exact`)**
    - **What it is**: A toggle switch between `Exact` matching and `Similar` (lookalike) expansion.
    - **Why it is used**: Controls audience targeting strictness.
    - **Business Purpose**:
      - `Exact`: Targets only consumers strictly within the selected audience segment.
      - `Similar`: Uses Amazon ML models to expand reach to lookalike users with similar behaviors.
-
-3. **Selected Audiences Summary Pane**
-   - **What it is**: A sidebar listing all audience sets added to the strategy by country.
-   - **Why it is used**: Provides a clear preview of targeted segments per market.
-   - **Business Purpose**: Validates that audience targeting is populated prior to binding creative assets.
 
 ---
 
