@@ -52,32 +52,6 @@ vow__agent/
 
 ---
 
-### 🔍 Har Subsystem Ka Purpose & Functionality Explained
-
-#### 1. `app/agent/` (LangGraph Planning Agent Engine)
-- **Kyun Banaya Gaya:** Ye AI Agent ka **Main Brain** hai. Ye user ke chat brief ko receive karta hai aur step-by-step state nodes ke zariye strategy proposal tayyar karta hai.
-- **Key Files:**
-  - `state.py`: Agent ki memory state (`PlanningState`) jisme saare messages aur strategy slots (Dates, Market, Budget) store hote hain.
-  - `graph.py`: LangGraph StateGraph compiled loop jo decide karta hai ki ek node ke baad agla node kon sa chalega.
-  - `checkpointer.py`: Conversational memory persistence manager (In-memory memory saver ya Postgres database saver).
-
-#### 2. `app/api/` (FastAPI REST Endpoints)
-- **Kyun Banaya Gaya:** UI (Riddhi / Frontend) aur external clients ko Agent ke sath connect karne ke liye REST APIs provide karta hai.
-- **Key Files:**
-  - `health.py`: Server health check endpoints (`/api/v1/health/live` & `/api/v1/health/ready`).
-  - `sessions.py`: Multi-turn chat session endpoints (`POST /api/v1/sessions/chat`) jahan user prompt bhejta hai aur agent ka response haasil karta hai.
-
-#### 3. `app/tools/` (VOW Platform REST Tool Wrappers)
-- **Kyun Banaya Gaya:** Agent ko actual VOW Platform APIs (Deals, Audiences, ASIN Validation, Reach Forecast, Strategy Creation) ke sath connect karta hai.
-- **Key Files:**
-  - `base.py`: Automatic HTTP client jo auth headers, retries, error handling, aur pagination automatically handle karta hai.
-  - `deals.py`: Deals fetch karne aur rate card pricing nikalne ka tool (`GET /deals/`, `GET /rates/ctv/{market}/`).
-
-#### 4. `app/core/` (Logging & Exception Handling)
-- **Kyun Banaya Gaya:** Platform ke custom error classes (jaise `VowApiError`, `VowAuthError`) aur Production-grade Structured JSON logging set up karne ke liye.
-
----
-
 ## 🛠️ 2. Step-by-Step Virtual Environment Setup & App Run Guide
 
 First-time user ya naye developer ko application start karne ke liye in simple steps ko follow karna hoga:
@@ -113,10 +87,27 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### Step 5: Application Server Start / Run Karein
+### Step 5: Application Server Start / Run Karein (Port 8080 Recommended)
 ```bash
-# Uvicorn Development Server with Auto-Reload:
-python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
+# Uvicorn Development Server with Auto-Reload on Port 8080:
+python -m uvicorn app.main:app --host 127.0.0.1 --port 8080 --reload
+```
+
+---
+
+## ⚠️ Troubleshooting: `[WinError 10013]` Error Solution
+
+Agar aapko terminal me ye error dikhe:
+`ERROR: [WinError 10013] An attempt was made to access a socket in a way forbidden by its access permissions`
+
+### Reason (Yeh Kyun Hota Hai?):
+Windows me Port 8000 pehle se kisi doosre process, background task, ya Windows Firewall / Hyper-V reserve range me hota hai.
+
+### Simple Fix (2 Seconds Fix):
+Port 8000 ki jagah **Port 8080** ya **Port 8001** use karke run karein:
+
+```powershell
+python -m uvicorn app.main:app --host 127.0.0.1 --port 8080 --reload
 ```
 
 ---
@@ -127,7 +118,7 @@ Application run hone ke baad aap 2 tareeqo se test kar sakte hain:
 
 ### Option A: Interactive Swagger API Documentation (Browser Me)
 Open your browser and navigate to:
-👉 **`http://127.0.0.1:8000/docs`**
+👉 **`http://127.0.0.1:8080/docs`**
 
 Yahan aapko live interactive Swagger UI dikhega jahan se aap endpoints ko click karke test kar sakte hain!
 
@@ -135,7 +126,7 @@ Yahan aapko live interactive Swagger UI dikhega jahan se aap endpoints ko click 
 
 #### 1. Test Server Health (Liveness Probe):
 ```bash
-python -c "import httpx; print(httpx.get('http://127.0.0.1:8000/api/v1/health/live').json())"
+python -c "import httpx; print(httpx.get('http://127.0.0.1:8080/api/v1/health/live').json())"
 ```
 **Expected Response:**
 ```json
@@ -144,7 +135,7 @@ python -c "import httpx; print(httpx.get('http://127.0.0.1:8000/api/v1/health/li
 
 #### 2. Test LangGraph Agent Chat Session Endpoint:
 ```bash
-python -c "import httpx; print(httpx.post('http://127.0.0.1:8000/api/v1/sessions/chat', json={'message': 'Hello, I want to plan a CTV campaign for UK with £10000 budget'}).json())"
+python -c "import httpx; print(httpx.post('http://127.0.0.1:8080/api/v1/sessions/chat', json={'message': 'Hello, I want to plan a CTV campaign for UK with £10000 budget'}).json())"
 ```
 **Expected Response:**
 ```json
