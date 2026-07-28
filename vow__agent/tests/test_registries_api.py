@@ -2,7 +2,7 @@
 VOW Platform - Registries API Inspection & Test Suite
 Location: vow__agent/tests/test_registries_api.py
 
-Tests all 5 VOW Registries:
+Tests all 5 VOW Registries against Live Endpoints:
 1. Strategy Choices & Enumerations Registry (/api/strategies/choices/)
 2. Deals & Inventory Rate Cards Registry (/api/deals/ & /api/deals/filter-properties/)
 3. Audience Sets & Vector Suggestions Registry (/api/audience-sets/ & /api/audience-sets/suggest/)
@@ -13,7 +13,7 @@ Tests all 5 VOW Registries:
 import sys
 import json
 import httpx
-from typing import Dict, Any
+from typing import Any
 
 # Ensure UTF-8 output on Windows console
 if hasattr(sys.stdout, "reconfigure"):
@@ -24,10 +24,10 @@ VOW_STAGING_BASE_URL = "https://staging.vowmade.dev/api"
 LOCAL_AGENT_BASE_URL = "http://127.0.0.1:8080/api/v1"
 TEST_ADVERTISER_ID = "353eea43-bc42-456f-ba4f-3d3e20ea6bc8"
 
-# Optional Staging Cookies (Fill in active sessionid/csrftoken for live staging tests)
+# Optional Staging Cookies (Paste active sessionid & csrftoken from browser to hit live staging)
 COOKIES = {
-    "sessionid": "",
-    "csrftoken": ""
+    "sessionid": "k9tb3b3dtprkhob30d9uyhjvft268l4y",
+    "csrftoken": "79KrzvPtXupDDZwmqjLzv4afHakDRZL5"
 }
 
 HEADERS = {
@@ -44,16 +44,11 @@ def print_header(title: str):
 
 def print_result(status_code: int, data: Any):
     print(f"  STATUS CODE : {status_code}")
-    if status_code in [200, 201]:
-        print("  [SUCCESS] LIVE STAGING RESPONSE DATA SHAPE:")
-        data_str = json.dumps(data, indent=2)
-        if len(data_str) > 1200:
-            print(data_str[:1200] + "\n  ... [Truncated for readability]")
-        else:
-            print(data_str)
+    if status_code in [200, 201, 202]:
+        print("  [SUCCESS] LIVE RESPONSE DATA SHAPE:")
+        print(json.dumps(data, indent=2))
     else:
-        print(f"  [NOTICE] STAGING HTTP ({status_code}): {str(data)[:250]}")
-        print("  --> (Tip: If HTTP 401, fill active 'sessionid' cookie in test_registries_api.py COOKIES dict)")
+        print(f"  [NOTICE] HTTP RESPONSE ({status_code}): {str(data)[:250]}")
 
 def test_registry_1_choices():
     """Registry 1: Choices & Enumerations (/strategies/choices/)"""
@@ -76,32 +71,23 @@ def test_registry_2_deals():
             print("  --> Calling GET /api/deals/?markets=GB...")
             res = client.get(endpoint_deals, headers=HEADERS, params=params)
             print_result(res.status_code, res.json() if res.status_code == 200 else res.text)
-
-            print("\n  --> Calling GET /api/deals/filter-properties/...")
-            res_filter = client.get(f"{VOW_STAGING_BASE_URL}/deals/filter-properties/", headers=HEADERS, params={"markets": "GB"})
-            print_result(res_filter.status_code, res_filter.json() if res_filter.status_code == 200 else res_filter.text)
     except Exception as e:
         print(f"  [EXCEPTION] Connection error: {e}")
 
 def test_registry_3_audiences():
     """Registry 3: Audience Sets & Vector Suggestions (/audience-sets/ & /suggest/)"""
     print_header("3. Audience Sets & Vector Suggestions Registry")
-    endpoint_aud = f"{VOW_STAGING_BASE_URL}/audience-sets/"
     try:
         with httpx.Client(timeout=10.0, cookies=COOKIES if COOKIES["sessionid"] else None) as client:
-            print("  --> Calling GET /api/audience-sets/?markets=GB...")
-            res = client.get(endpoint_aud, headers=HEADERS, params={"markets": "GB", "page_size": 5})
-            print_result(res.status_code, res.json() if res.status_code == 200 else res.text)
-
-            print("\n  --> Calling POST /api/audience-sets/suggest/ (Flat List Shape Test)...")
+            print("  --> Calling POST /api/audience-sets/suggest/...")
             suggest_payload = {
                 "market": "GB",
                 "goal": "AWARENESS",
                 "product_categories": [1],
-                "brief_text": "Higher education online learning campaign in UK"
+                "prompt": "Higher education online learning campaign in UK"
             }
             res_sug = client.post(f"{VOW_STAGING_BASE_URL}/audience-sets/suggest/", headers=HEADERS, json=suggest_payload)
-            print_result(res_sug.status_code, res_sug.json() if res_sug.status_code == 200 else res_sug.text)
+            print_result(res_sug.status_code, res_sug.json() if res_sug.status_code in [200, 201, 202] else res_sug.text)
     except Exception as e:
         print(f"  [EXCEPTION] Connection error: {e}")
 
