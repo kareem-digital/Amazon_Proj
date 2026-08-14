@@ -1,0 +1,1049 @@
+<title>CTV Planner Test Script</title>
+<style>
+  /* Ink-blue on cool paper. The traffic-light statuses are the load-bearing colour here,
+     so the accent deliberately sits away from green / amber / red. */
+  :root {
+    --paper:      #F6F7FA;
+    --raised:     #FFFFFF;
+    --sunken:     #ECEFF5;
+    --rule:       #D8DDE8;
+    --ink:        #171C27;
+    --muted:      #5B6478;
+    --accent:     #2C3E6B;
+    --accent-dim: #7C88A8;
+    --works:      #17673F;
+    --works-bg:   #E4F0E9;
+    --partial:    #8A5B00;
+    --partial-bg: #F7EEDC;
+    --gap:        #A32B2B;
+    --gap-bg:     #F7E5E5;
+
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+    --serif: Georgia, "Iowan Old Style", "Times New Roman", serif;
+    --mono: ui-monospace, "Cascadia Mono", "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:      #14171F;
+      --raised:     #1B1F2A;
+      --sunken:     #232837;
+      --rule:       #333A4C;
+      --ink:        #E7EAF2;
+      --muted:      #98A1B5;
+      --accent:     #A9BAE6;
+      --accent-dim: #6B769A;
+      --works:      #6FD39C;
+      --works-bg:   #17301F;
+      --partial:    #E0B45E;
+      --partial-bg: #322709;
+      --gap:        #F08A8A;
+      --gap-bg:     #34181B;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --paper:      #14171F;
+    --raised:     #1B1F2A;
+    --sunken:     #232837;
+    --rule:       #333A4C;
+    --ink:        #E7EAF2;
+    --muted:      #98A1B5;
+    --accent:     #A9BAE6;
+    --accent-dim: #6B769A;
+    --works:      #6FD39C;
+    --works-bg:   #17301F;
+    --partial:    #E0B45E;
+    --partial-bg: #322709;
+    --gap:        #F08A8A;
+    --gap-bg:     #34181B;
+  }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.6;
+    margin: 0;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 3rem 1.5rem 6rem;
+    display: grid;
+    grid-template-columns: 190px minmax(0, 1fr);
+    gap: 3rem;
+    align-items: start;
+  }
+
+  @media (max-width: 860px) {
+    .page { grid-template-columns: minmax(0, 1fr); gap: 2rem; padding-top: 2rem; }
+    nav.rail { position: static; }
+  }
+
+  /* --- masthead ------------------------------------------------------------ */
+
+  header.masthead { grid-column: 1 / -1; border-bottom: 2px solid var(--ink); padding-bottom: 1.5rem; }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent-dim);
+    margin: 0 0 0.6rem;
+  }
+
+  h1 {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: clamp(2rem, 5vw, 2.9rem);
+    line-height: 1.1;
+    letter-spacing: -0.015em;
+    margin: 0 0 0.8rem;
+    text-wrap: balance;
+  }
+
+  .standfirst { max-width: 62ch; color: var(--muted); margin: 0; }
+  .standfirst strong { color: var(--ink); font-weight: 600; }
+
+  /* --- tally --------------------------------------------------------------- */
+
+  .tally { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1.5rem; }
+
+  .tally b {
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    padding: 0.35rem 0.7rem;
+    border-radius: 2px;
+  }
+
+  .t-works   { background: var(--works-bg);   color: var(--works); }
+  .t-partial { background: var(--partial-bg); color: var(--partial); }
+  .t-gap     { background: var(--gap-bg);     color: var(--gap); }
+
+  /* --- rail ---------------------------------------------------------------- */
+
+  nav.rail { position: sticky; top: 2rem; font-size: 0.85rem; }
+  nav.rail p {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent-dim);
+    margin: 0 0 0.75rem;
+  }
+  nav.rail ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.4rem; }
+  nav.rail a {
+    color: var(--muted);
+    text-decoration: none;
+    border-left: 2px solid var(--rule);
+    padding: 0.1rem 0 0.1rem 0.7rem;
+    display: block;
+  }
+  nav.rail a:hover, nav.rail a:focus-visible { color: var(--accent); border-left-color: var(--accent); }
+  nav.rail a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* --- steps --------------------------------------------------------------- */
+
+  main { display: flex; flex-direction: column; gap: 3.5rem; min-width: 0; }
+
+  section.step { scroll-margin-top: 1.5rem; }
+
+  .step-head { display: flex; align-items: baseline; gap: 0.8rem; flex-wrap: wrap; margin-bottom: 0.4rem; }
+
+  .step-num {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    color: var(--raised);
+    background: var(--accent);
+    padding: 0.2rem 0.45rem;
+    border-radius: 2px;
+  }
+
+  h2 {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: 1.6rem;
+    letter-spacing: -0.01em;
+    margin: 0;
+    text-wrap: balance;
+  }
+
+  .step-note { color: var(--muted); max-width: 68ch; margin: 0 0 1.4rem; }
+
+  /* --- the walk ------------------------------------------------------------ */
+
+  .walk {
+    background: var(--sunken);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: 0.9rem 1.1rem;
+    margin-bottom: 1.8rem;
+    overflow-x: auto;
+  }
+  .walk p {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent-dim);
+    margin: 0 0 0.5rem;
+  }
+  .walk ol {
+    font-family: var(--mono);
+    font-size: 0.86rem;
+    margin: 0;
+    padding-left: 1.4rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    color: var(--ink);
+  }
+  .walk ol li::marker { color: var(--accent-dim); }
+  .walk em { color: var(--muted); font-family: var(--sans); font-size: 0.85rem; font-style: normal; }
+
+  /* --- cases --------------------------------------------------------------- */
+
+  .cases { display: flex; flex-direction: column; }
+
+  .case {
+    display: grid;
+    grid-template-columns: 3.2rem minmax(0, 1fr);
+    gap: 0 1rem;
+    padding: 1.1rem 0;
+    border-top: 1px solid var(--rule);
+  }
+  .case:last-child { border-bottom: 1px solid var(--rule); }
+
+  .case-id {
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    color: var(--accent-dim);
+    font-variant-numeric: tabular-nums;
+    padding-top: 0.15rem;
+  }
+
+  .case-body { min-width: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+
+  .say {
+    font-family: var(--mono);
+    font-size: 0.95rem;
+    line-height: 1.45;
+    color: var(--ink);
+    background: var(--raised);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: 0.5rem 0.7rem;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+
+  .expect { margin: 0; color: var(--muted); max-width: 72ch; }
+  .expect strong { color: var(--ink); font-weight: 600; }
+  .expect code {
+    font-family: var(--mono);
+    font-size: 0.86em;
+    background: var(--sunken);
+    padding: 0.08em 0.34em;
+    border-radius: 2px;
+    color: var(--ink);
+  }
+
+  .chip {
+    align-self: flex-start;
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 0.18rem 0.45rem;
+    border-radius: 2px;
+  }
+  .c-works   { background: var(--works-bg);   color: var(--works); }
+  .c-partial { background: var(--partial-bg); color: var(--partial); }
+  .c-gap     { background: var(--gap-bg);     color: var(--gap); }
+
+  /* --- closing ------------------------------------------------------------- */
+
+  .closing { border-top: 2px solid var(--ink); padding-top: 1.5rem; }
+  .closing h2 { margin-bottom: 0.8rem; }
+  .closing ul { margin: 0; padding-left: 1.2rem; display: flex; flex-direction: column; gap: 0.7rem; color: var(--muted); max-width: 72ch; }
+  .closing li strong { color: var(--ink); font-weight: 600; }
+  .closing code {
+    font-family: var(--mono);
+    font-size: 0.86em;
+    background: var(--sunken);
+    padding: 0.08em 0.34em;
+    border-radius: 2px;
+    color: var(--ink);
+  }
+</style>
+
+<div class="page">
+
+  <header class="masthead">
+    <p class="eyebrow">VOW Planning Agent &middot; PLN-01 / VA-191</p>
+    <h1>CTV Planner Test Script</h1>
+    <p class="standfirst">
+      Every case below was run against the agent on the local server before it was written down.
+      Type the line, read the reply, compare it with what the case says to expect.
+      <strong>Start a fresh session for each group</strong> — reusing one replays state and
+      produces failures that are not there.
+    </p>
+    <div class="tally">
+      <b class="t-works">62 WORK</b>
+      <b class="t-partial">6 PARTIAL</b>
+      <b class="t-gap">4 GAP</b>
+    </div>
+  </header>
+
+  <nav class="rail">
+    <p>Jump to</p>
+    <ol>
+      <li><a href="#brief">1 &nbsp;The brief</a></li>
+      <li><a href="#inventory">2 &nbsp;Inventory</a></li>
+      <li><a href="#split">3 &nbsp;Budget split</a></li>
+      <li><a href="#audience">4 &nbsp;Audience</a></li>
+      <li><a href="#location">5 &nbsp;Location</a></li>
+      <li><a href="#questions">&nbsp;&nbsp;&nbsp;Questions</a></li>
+      <li><a href="#approval">6–8 Plan &amp; create</a></li>
+      <li><a href="#gaps">&nbsp;&nbsp;&nbsp;Known gaps</a></li>
+    </ol>
+  </nav>
+
+  <main>
+
+    <!-- ============================ STEP 1 ============================ -->
+    <section class="step" id="brief">
+      <div class="step-head">
+        <span class="step-num">STEP 1</span>
+        <h2>The brief</h2>
+      </div>
+      <p class="step-note">
+        Every case here starts a new conversation. The agent needs a market, a budget or an
+        impression target, dates, a creative length and a KPI before it will look at inventory.
+      </p>
+
+      <div class="cases">
+
+        <div class="case">
+          <div class="case-id">1.1</div>
+          <div class="case-body">
+            <div class="say">CTV campaign in the UK, £15,000, 1 Oct to 31 Oct 2026, 30 second creatives</div>
+            <p class="expect">Reads all four fields, then asks the one thing still missing: <strong>Reach or Frequency</strong>. Answer <code>Reach</code> and the plan card appears.</p>
+            <span class="chip c-works">Works</span>
+          </div>
+        </div>
+
+        <div class="case">
+          <div class="case-id">1.2</div>
+          <div class="case-body">
+            <div class="say">I want to run a CTV campaign
+→ the UK
+→ £15,000
+→ 30 seconds
+→ 1 Oct to 31 Oct 2026
+→ reach</div>
+            <p class="expect">One field per turn, in any order. Nothing already given is asked for twice, and the same plan card arrives at the end as in 1.1.</p>
+            <span class="chip c-works">Works</span>
+          </div>
+        </div>
+
+        <div class="case">
+          <div class="case-id">1.3</div>
+          <div class="case-body">
+            <div class="say">I need to plan something for TV</div>
+            <p class="expect">No slots at all. The agent says what it does and asks for a market, budget and dates — it does not print an empty form.</p>
+            <span class="chip c-works">Works</span>
+          </div>
+        </div>
+
+        <div class="case">
+          <div class="case-id">1.4</div>
+          <div class="case-body">
+            <div class="say">CTV campaign in Sri Lanka, £15,000, 30 seconds</div>
+            <p class="expect">A market VOW does not sell. The agent refuses <strong>before</strong> asking for anything else, and names the four it does carry. It should never ask for dates on a market it cannot plan.</p>
+            <span class="chip c-works">Works</span>
+          </div>
+        </div>
+
+        <div class="case">
+          <div class="case-id">1.5</div>
+          <div class="case-body">
+            <div class="say">CTV campaign in the UK, £15,000, 45 second creatives</div>
+            <p class="expect">45s is not sold. The agent names the lengths that are — 10s, 15s, 20s, 30s. It stops there rather than asking which to use, which is the gap noted below.</p>
+            <span class="chip c-partial">Partial</span>
+          </div>
+        </div>
+
+        <div class="case">
+          <div class="case-id">1.6</div>
+          <div class="case-body">
+            <div class="say">I don't know</div>
+            <p class="expect">Send after a brief with no budget. The agent accepts not knowing and says what it cannot do without it, rather than asking again.</p>
+            <span class="chip c-works">Works</span>
+          </div>
+        </div>
+
+        <div class="case">
+          <div class="case-id">1.7</div>
+          <div class="case-body">
+            <div class="say">actually make it £30,000</div>
+            <p class="expect">Card reprints with the new figure — and because the account only has £25,000 of credit, a warning follows. The plan is still allowed; it just cannot run.</p>
+            <span class="chip c-works">Works</span>
+          </div>
+        </div>
+
+        <div class="case">
+          <div class="case-id">1.8</div>
+          <div class="case-body">
+            <div class="say">actually make it 10 seconds</div>
+            <p class="expect">The length changes, and anything matched against 30s — inventory, forecast — is thrown away rather than left standing against a length it was not priced for.</p>
+            <span class="chip c-works">Works</span>
+          </div>
+        </div>
+
+        <div class="case">
+          <div class="case-id">1.9</div>
+          <div class="case-body">
+            <div class="say">forget all that, start again</div>
+            <p class="expect">Everything cleared, and the reply <strong>lists what was cleared</strong>: no market, no budget, no dates, no inventory. Send it while audience options are on screen too — a reset must beat an open question.</p>
+            <span class="chip c-works">Works</span>
+          </div>
+        </div>
+
+        <div class="case">
+          <div class="case-id">1.10</div>
+          <div class="case-body">
+            <div class="say">CTV in the UK, 5 million impressions, 30s, October 2026</div>
+            <p class="expect">An impression target instead of a budget. The card shows <code>5,000,000 impressions</code> and the currency note fires. The turn then stops without offering the inventory — see the gaps.</p>
+            <span class="chip c-partial">Partial</span>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ============================ STEP 2 ============================ -->
+    <section class="step" id="inventory">
+      <div class="step-head">
+        <span class="step-num">STEP 2</span>
+        <h2>Inventory</h2>
+      </div>
+      <p class="step-note">
+        The list mixes three tiers: a bookable deal, a channel priced on the rate card with no
+        deal in this market, and one that needs curating. The point of these cases is that the
+        agent tells them apart.
+      </p>
+
+      <div class="walk">
+        <p>Walk here first</p>
+        <ol>
+          <li>CTV campaign in the UK, £15,000, 1 Oct to 31 Oct 2026, 30 second creatives</li>
+          <li>Reach</li>
+          <li>yes <em>— pulls up the inventory</em></li>
+        </ol>
+      </div>
+
+      <div class="cases">
+
+        <div class="case">
+          <div class="case-id">2.1</div>
+          <div class="case-body">
+            <div class="say">Prime Video</div>
+            <p class="expect">The only bookable deal. Locks in and moves to the audience question. Try it in a sentence too — <code>let's go with Prime Video</code>.</p>
+            <span class="chip c-works">Works</span>
+          </div>
+        </div>
+
+        <div class="case">
+          <div class="case-id">2.2</div>
+          <div class="case-body">
+            <div class="say">Netflix</div>
+            <p class="expect">On the rate card at <strong>£39.75</strong>, no deal in the UK. The agent says that in those terms — not "I could not find Netflix" — and shows the list again so there is something to pick.</p>
+            <span class="chip c-works">Works</span>
+          </div>
+        </div>
+
+        <div class="case">
+          <div class="case-id">2.3</div>
+          <div class="case-body">
+            <div class="say">Disney+</div>
+            <p class="expect">Different reason, different next step: it can be arranged, but the deal is curated after the IO is signed. The reply prices it, says reach cannot be forecast on it, and names what a curation request still needs.</p>
+            <span class="chip c-works">Works</span>
+          </div>
+        </div>
+
+        <div class="case">
+          <div class="case-id">2.4</div>
+          <div class="case-body">
+            <div class="say">Prime Video and Netflix</div>
+            <p class="expect">One buyable, one not. Prime Video goes in; Netflix is <strong>named, priced and explained</strong> rather than dropped. Check the plan card above it says <code>Prime Video</code> only — it used to list both.</p>
+            <span class="chip c-works">Works</span>
+          </div>
+        </div>
+
+        <div class="case">
+          <div class="case-id">2.5</div>
+          <div class="case-body">
+            <div class="say">CTV campaign in the UK on Zee TV, £15,000, 30s, October 2026</div>
+            <p class="expect">A channel the platform does not carry at all. Short refusal, no menu, and one question: shall I show what is available? Answer <code>yes please</code> for the list, or <code>no thanks</code> to close warmly. Both are real answers — check neither prints the refusal twice.</p>
+            <span class="chip c-works">Works</span>
+          </div>
+        </div>
+
+        <div class="case">
+          <div class="case-id">2.6</div>
+          <div class="case-body">
+            <div class="say">look wider first</div>
+            <p class="expect">Eleven rows at every length, with each row's accepted lengths shown — that is the whole reason to widen. Private Auction deals appear, and channels read out of a deal name are marked <code>inferred</code>.</p>
+            <span class="chip c-works">Works</span>
+          </div>
+        </div>
+
+        <div class="case">
+          <div class="case-id">2.7</div>
+          <div class="case-body">
+            <div class="say">the first one</div>
+            <p class="expect">Send after 2.6. Points at a row by position. Also try <code>option 2</code> and <code>number 3</code>.</p>
+            <span class="chip c-works">Works</span>
+          </div>
+        </div>
+
+        <div class="case">
+          <div class="case-id">2.8</div>
+          <div class="case-body">
+            <div class="say">show me the rate card</div>
+            <p class="expect">Every channel and every length, priced. Not a pick — the inventory question stays open underneath.</p>
+            <span class="chip c-works">Works</span>
+          </div>
+        </div>
+
+        <div class="case">
+          <div class="case-id">2.9</div>
+          <div class="case-body">
+            <div class="say">which is cheapest?</div>
+            <p class="expect">Answers with the rate card, but does not actually rank it, says <code>GB</code> instead of United Kingdom, and labels Netflix "needs curation" where the list above says no deal in this market.</p>
+            <span class="chip c-partial">Partial</span>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ============================ STEP 3 ============================ -->
+    <section class="step" id="split">
+      <div class="step-head">
+        <span class="step-num">STEP 3</span>
+        <h2>Budget split</h2>
+      </div>
+      <p class="step-note">
+        Only appears when the plan holds more than one deal — with one line there is nothing to
+        divide. In the UK at 30s only one deal is bookable, so you have to widen first to reach
+        this step at all.
+      </p>
+
+      <div class="walk">
+        <p>Walk here first</p>
+        <ol>
+          <li>CTV campaign in the UK, £15,000, 1 Oct to 31 Oct 2026, 30 second creatives</li>
+          <li>Reach</li>
+          <li>yes</li>
+          <li>show me everything <em>— the widened list, where two channels are bookable</em></li>
+        </ol>
+      </div>
+
+      <div class="cases">
+
+        <div class="case">
+          <div class="case-id">3.1</div>
+          <div class="case-body">
+            <div class="say">Prime Video and Tubi</div>
+            <p class="expect">Two lines, <strong>one deal each</strong> — the widened list holds four Prime Video rows and only the 30s one belongs on a 30s plan. The split proposes £7,500 apiece, states which method it used and why, and offers all three answers.</p>
+            <span class="chip c-works">Works</span>
+          </div>
+        </div>
+
+        <div class="case">
+          <div class="case-id">3.2</div>
+          <div class="case-body">
+            <div class="say">yes that's fine</div>
+            <p class="expect">Accepts the proposal. Reply is two lines and moves to the audience — it does not restate the split.</p>
+            <span class="chip c-works">Works</span>
+          </div>
+        </div>
+
+        <div class="case">
+          <div class="case-id">3.3</div>
+          <div class="case-body">
+            <div class="say">even it out by impressions</div>
+            <p class="expect">The other method. Every line now delivers the same volume and the spend is uneven. The question stays open and now offers <strong>even the spend out instead</strong> — never the method just applied.</p>
+            <span class="chip c-works">Works</span>
+          </div>
+        </div>
+
+        <div class="case">
+          <div class="case-id">3.4</div>
+          <div class="case-body">
+            <div class="say">skip the split</div>
+            <p class="expect">No split. The plan is quoted at a blended CPM and the reply <strong>says out loud</strong> that nothing is bought at that rate — it is an average across the lines.</p>
+            <span class="chip c-works">Works</span>
+          </div>
+        </div>
+
+        <div class="case">
+          <div class="case-id">3.5</div>
+          <div class="case-body">
+            <div class="say">both</div>
+            <p class="expect">Works against a short list. Against the eleven-row widened list it comes back "not sure what you mean" — "both" of eleven has no meaning, but the reply should say so.</p>
+            <span class="chip c-gap">Gap</span>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ============================ STEP 4 ============================ -->
+    <section class="step" id="audience">
+      <div class="step-head">
+        <span class="step-num">STEP 4</span>
+        <h2>Audience</h2>
+      </div>
+      <p class="step-note">
+        Three profiles, priced. Declining all three is a fourth answer, not a failure — and it
+        is the one that carries no data fee.
+      </p>
+
+      <div class="walk">
+        <p>Walk here first</p>
+        <ol>
+          <li>CTV campaign in the UK, £15,000, 1 Oct to 31 Oct 2026, 30 second creatives</li>
+          <li>Reach</li>
+          <li>yes</li>
+          <li>Prime Video</li>
+          <li>a specific audience <em>— shows the three options</em></li>
+        </ol>
+      </div>
+
+      <div class="cases">
+
+        <div class="case">
+          <div class="case-id">4.1</div>
+          <div class="case-body">
+            <div class="say">BALANCED</div>
+            <p class="expect">Named directly. The pick is read back — <code>Balanced audience selected</code> — before the forecast, so the numbers can be attributed to an option.</p>
+            <span class="chip c-works">Works</span>
+          </div>
+        </div>
+
+        <div class="case">
+          <div class="case-id">4.2</div>
+          <div class="case-body">
+            <div class="say">the narrow one</div>
+            <p class="expect">Also <code>option 1</code>, <code>second</code>, <code>option 3</code>, <code>broadest</code>. Note the forecast for Narrow and Balanced is the same — at £15,000 the budget binds long before the pool does, which is correct and worth checking you see the same.</p>
+            <span class="chip c-works">Works</span>
+          </div>
+        </div>
+
+        <div class="case">
+          <div class="case-id">4.3</div>
+          <div class="case-body">
+            <div class="say">keep it broad</div>
+            <p class="expect">Send at the audience question <em>before</em> the options. No audience set, no data fee — and the reply warns that widening the audience will not be available if reach comes back short. CPM drops to £28.88.</p>
+            <span class="chip c-works">Works</span>
+          </div>
+        </div>
+
+        <div class="case">
+          <div class="case-id">4.4</div>
+          <div class="case-body">
+            <div class="say">none of them</div>
+            <p class="expect">The same decision, taken after seeing the three. Must not be read as picking Wide, which is the broadest <em>paid</em> option.</p>
+            <span class="chip c-works">Works</span>
+          </div>
+        </div>
+
+        <div class="case">
+          <div class="case-id">4.5</div>
+          <div class="case-body">
+            <div class="say">why is balanced recommended?</div>
+            <p class="expect">Compares all three by pool size and price, and explains that the CPM difference is the data fee rather than the breadth. A question, so the choice stays open underneath.</p>
+            <span class="chip c-works">Works</span>
+          </div>
+        </div>
+
+        <div class="case">
+          <div class="case-id">4.6</div>
+          <div class="case-body">
+            <div class="say">actually use the narrow audience</div>
+            <p class="expect">Sent after a forecast. The three come back with the current pick named — <code>You're on Balanced at the moment</code> — so the trader can move between them without starting over.</p>
+            <span class="chip c-works">Works</span>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ============================ STEP 5 ============================ -->
+    <section class="step" id="location">
+      <div class="step-head">
+        <span class="step-num">STEP 5</span>
+        <h2>Location targeting</h2>
+      </div>
+      <p class="step-note">
+        Optional, and the plan is not delivered until it has an answer either way. Four shapes
+        are supported: a place name, a postcode, a radius around an address, and an exclusion.
+        Watch the reach and frequency move — impressions never do, because the budget buys those
+        wherever the ad runs.
+      </p>
+
+      <div class="walk">
+        <p>Walk here first</p>
+        <ol>
+          <li>CTV campaign in the UK, £15,000, 1 Oct to 31 Oct 2026, 30 second creatives</li>
+          <li>Reach</li>
+          <li>yes</li>
+          <li>Prime Video</li>
+          <li>BALANCED <em>— forecast on screen, Step 5 question open</em></li>
+        </ol>
+      </div>
+
+      <div class="cases">
+
+        <div class="case">
+          <div class="case-id">5.1</div>
+          <div class="case-body">
+            <div class="say">can we target just London instead of the whole UK?</div>
+            <p class="expect">Resolves to <code>London, England, UK</code> and says it replaces UK-wide. Reach stays ~154k and the reply <strong>explains why</strong>: 629k of the audience is inside London, and £15,000 only buys enough impressions for 154k of them. The budget is the limit, not the area.</p>
+            <span class="chip c-works">Works</span>
+          </div>
+        </div>
+
+        <div class="case">
+          <div class="case-id">5.2</div>
+          <div class="case-body">
+            <div class="say">actually just target SW1A</div>
+            <p class="expect">A postcode. Reach collapses to <strong>~9.7k at frequency 50.8</strong> — the same impressions landing on far fewer people — and the agent advises widening before committing. This is the case where the numbers must visibly differ from 5.1.</p>
+            <span class="chip c-works">Works</span>
+          </div>
+        </div>
+
+        <div class="case">
+          <div class="case-id">5.3</div>
+          <div class="case-body">
+            <div class="say">target SW1A, EC2A and N1</div>
+            <p class="expect">A pasted list. SW1A resolves; the mock has no EC2A or N1, so they are reported back as unmatched. Against real VOW data all three would resolve — the agent is doing the right thing with the data it has.</p>
+            <span class="chip c-partial">Partial</span>
+          </div>
+        </div>
+
+        <div class="case">
+          <div class="case-id">5.4</div>
+          <div class="case-body">
+            <div class="say">within 3km of Manchester city centre</div>
+            <p class="expect">A radius. This <strong>mints a new location</strong> on the platform, so the agent reads the address and the distance back and waits for a yes before creating anything. Say <code>yes</code> to confirm.</p>
+            <span class="chip c-works">Works</span>
+          </div>
+        </div>
+
+        <div class="case">
+          <div class="case-id">5.5</div>
+          <div class="case-body">
+            <div class="say">10 miles around Birmingham</div>
+            <p class="expect">Miles as well as kilometres, and <code>around</code> as well as <code>within … of</code>. Confirm it and compare the reach against 5.4 — a 10-mile circle is much larger than a 3km one, and the numbers have to show it.</p>
+            <span class="chip c-works">Works</span>
+          </div>
+        </div>
+
+        <div class="case">
+          <div class="case-id">5.6</div>
+          <div class="case-body">
+            <div class="say">0 miles of Manchester city centre</div>
+            <p class="expect">The degenerate case. Read correctly rather than ignored — worth confirming it does not silently forecast the same reach as a real radius.</p>
+            <span class="chip c-works">Works</span>
+          </div>
+        </div>
+
+        <div class="case">
+          <div class="case-id">5.7</div>
+          <div class="case-body">
+            <div class="say">target London but exclude SW1A</div>
+            <p class="expect">Include and exclude in one sentence. London is targeted and SW1A is named as the exclusion — check it has not <strong>inverted</strong>, which is the bug this case exists for.</p>
+            <span class="chip c-works">Works</span>
+          </div>
+        </div>
+
+        <div class="case">
+          <div class="case-id">5.8</div>
+          <div class="case-body">
+            <div class="say">exclude Scotland</div>
+            <p class="expect">An exclusion with no include beside it. Recorded and read back, but no forecast runs and the Step 5 question does not return — the turn ends half-finished.</p>
+            <span class="chip c-gap">Gap</span>
+          </div>
+        </div>
+
+        <div class="case">
+          <div class="case-id">5.9</div>
+          <div class="case-body">
+            <div class="say">target Springfield</div>
+            <p class="expect">A place the lookup cannot match. Says so and asks the trader to check, rather than guessing at one of the several Springfields.</p>
+            <span class="chip c-works">Works</span>
+          </div>
+        </div>
+
+        <div class="case">
+          <div class="case-id">5.10</div>
+          <div class="case-body">
+            <div class="say">drop the location targeting</div>
+            <p class="expect">Send after 5.1 or 5.2. Undoes it, back to market-wide, and re-forecasts. Also try <code>broaden it</code> and <code>go country-wide</code>.</p>
+            <span class="chip c-works">Works</span>
+          </div>
+        </div>
+
+        <div class="case">
+          <div class="case-id">5.11</div>
+          <div class="case-body">
+            <div class="say">what targeting can I use?</div>
+            <p class="expect">Lists the five types CTV supports and says which one can actually be applied today. The radius example it gives is testable verbatim — that is case 5.4.</p>
+            <span class="chip c-works">Works</span>
+          </div>
+        </div>
+
+        <div class="case">
+          <div class="case-id">5.12</div>
+          <div class="case-body">
+            <div class="say">no extra targeting, carry on</div>
+            <p class="expect">The answer that ends Step 5 and delivers the plan. Also <code>continue</code>, <code>that's fine</code>, <code>nothing else</code>, or a bare <code>no</code>.</p>
+            <span class="chip c-works">Works</span>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ============================ QUESTIONS ============================ -->
+    <section class="step" id="questions">
+      <div class="step-head">
+        <span class="step-num">ANY TIME</span>
+        <h2>Questions</h2>
+      </div>
+      <p class="step-note">
+        A question must never lose the trader's place. After any of these, whatever the agent
+        was waiting for should still be waiting — check the open question comes back or stays
+        answerable.
+      </p>
+
+      <div class="cases">
+
+        <div class="case">
+          <div class="case-id">Q.1</div>
+          <div class="case-body">
+            <div class="say">what CPM are we paying?</div>
+            <p class="expect">Two figures, and the difference named: the deal rate <strong>£28.88</strong>, and <strong>£30.51</strong> as what the plan is actually charged with the audience fee on top. The second line only appears when the two differ.</p>
+            <span class="chip c-works">Works</span>
+          </div>
+        </div>
+
+        <div class="case">
+          <div class="case-id">Q.2</div>
+          <div class="case-body">
+            <div class="say">what if my budget was only £5,000?</div>
+            <p class="expect">Uses the figure in the question, not a guess. Scaling table at the plan's effective CPM, and an offer to re-plan at that number. Try <code>what if I doubled the budget?</code> too, which has no figure and gets 0.5× / 1× / 1.5×.</p>
+            <span class="chip c-works">Works</span>
+          </div>
+        </div>
+
+        <div class="case">
+          <div class="case-id">Q.3</div>
+          <div class="case-body">
+            <div class="say">is that enough?</div>
+            <p class="expect">Refuses to answer for the trader — it depends on how many people they need — but gives the arithmetic and two larger budgets to compare against.</p>
+            <span class="chip c-works">Works</span>
+          </div>
+        </div>
+
+        <div class="case">
+          <div class="case-id">Q.4</div>
+          <div class="case-body">
+            <div class="say">what is a CPM?</div>
+            <p class="expect">Definitions work cold, with no plan at all. Also <code>what is a deal?</code>, <code>what is CTV?</code>, <code>what is ROS?</code>, <code>what's a preferred deal?</code>, <code>what's the difference between reach and impressions?</code>, <code>do I have to use an audience?</code></p>
+            <span class="chip c-works">Works</span>
+          </div>
+        </div>
+
+        <div class="case">
+          <div class="case-id">Q.5</div>
+          <div class="case-body">
+            <div class="say">which markets can I plan in?</div>
+            <p class="expect">Counted live, never quoted from a constant: 21 supported, 6 with inventory. Same for <code>what channels do you have?</code> and <code>what creative lengths can I run?</code></p>
+            <span class="chip c-works">Works</span>
+          </div>
+        </div>
+
+        <div class="case">
+          <div class="case-id">Q.6</div>
+          <div class="case-body">
+            <div class="say">what fees are there?</div>
+            <p class="expect">The audience data fee and the product-category fee, kept apart and fetched from their own sources — they are different fees and both can apply.</p>
+            <span class="chip c-works">Works</span>
+          </div>
+        </div>
+
+        <div class="case">
+          <div class="case-id">Q.7</div>
+          <div class="case-body">
+            <div class="say">what's on the plan so far?</div>
+            <p class="expect">Reprints the card mid-flow. Pair it with <code>what else do you need?</code> on a half-finished brief, which lists only the gaps.</p>
+            <span class="chip c-works">Works</span>
+          </div>
+        </div>
+
+        <div class="case">
+          <div class="case-id">Q.8</div>
+          <div class="case-body">
+            <div class="say">why is the frequency 3.2?</div>
+            <p class="expect">Shows the division that produced it and names the two levers that bring it down.</p>
+            <span class="chip c-works">Works</span>
+          </div>
+        </div>
+
+        <div class="case">
+          <div class="case-id">Q.9</div>
+          <div class="case-body">
+            <div class="say">how much should I spend?</div>
+            <p class="expect">Works off a market and a length, before any budget exists.</p>
+            <span class="chip c-works">Works</span>
+          </div>
+        </div>
+
+        <div class="case">
+          <div class="case-id">Q.10</div>
+          <div class="case-body">
+            <div class="say">what's the weather in London?</div>
+            <p class="expect">Genuinely off topic, and refused — but only when nothing is outstanding. Send it while the agent is waiting on an answer and it must not deflect, because that would tell someone who answered the question that their answer was off topic.</p>
+            <span class="chip c-works">Works</span>
+          </div>
+        </div>
+
+        <div class="case">
+          <div class="case-id">Q.11</div>
+          <div class="case-body">
+            <div class="say">that reach feels a bit low for 15k</div>
+            <p class="expect">Should offer a repair — a wider audience, a bigger budget. Comes back "that didn't change anything on the plan" instead.</p>
+            <span class="chip c-gap">Gap</span>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ============================ STEPS 6-8 ============================ -->
+    <section class="step" id="approval">
+      <div class="step-head">
+        <span class="step-num">STEPS 6–8</span>
+        <h2>Plan, approval, creation</h2>
+      </div>
+      <p class="step-note">
+        Nothing before this writes anything to VOW. <code>create_strategy</code> is the first call
+        that does, and it sits behind the approval gate for that reason.
+      </p>
+
+      <div class="walk">
+        <p>Walk here first</p>
+        <ol>
+          <li>CTV campaign in the UK, £15,000, 1 Oct to 31 Oct 2026, 30 second creatives</li>
+          <li>Reach</li>
+          <li>yes</li>
+          <li>Prime Video</li>
+          <li>BALANCED</li>
+          <li>no extra targeting, carry on <em>— delivers the plan</em></li>
+        </ol>
+      </div>
+
+      <div class="cases">
+
+        <div class="case">
+          <div class="case-id">6.1</div>
+          <div class="case-body">
+            <div class="say">no extra targeting, carry on</div>
+            <p class="expect">The full plan: campaign, market, location, flight, creative, budget, goal, inventory, audience, forecast, and a <strong>reach curve</strong> showing what the last quarter of the budget adds. Ends on one question — ready to create?</p>
+            <span class="chip c-works">Works</span>
+          </div>
+        </div>
+
+        <div class="case">
+          <div class="case-id">7.1</div>
+          <div class="case-body">
+            <div class="say">yes create it</div>
+            <p class="expect">Approval. The agent then asks the one field the brief never gated — does the campaign drive to Amazon or to your own site?</p>
+            <span class="chip c-works">Works</span>
+          </div>
+        </div>
+
+        <div class="case">
+          <div class="case-id">8.1</div>
+          <div class="case-body">
+            <div class="say">to Amazon</div>
+            <p class="expect">Creates it. Returns a strategy ID, the audience set it created first, and <strong>Status: Not running yet</strong> — with the next step named and a reminder that nothing has been spent. Try <code>our own website</code> for the other enum.</p>
+            <span class="chip c-works">Works</span>
+          </div>
+        </div>
+
+        <div class="case">
+          <div class="case-id">7.2</div>
+          <div class="case-body">
+            <div class="say">it needs changes</div>
+            <p class="expect">A rejection sends the flow back to the audience — the cheapest thing to change — with the current pick named.</p>
+            <span class="chip c-works">Works</span>
+          </div>
+        </div>
+
+        <div class="case">
+          <div class="case-id">7.3</div>
+          <div class="case-body">
+            <div class="say">not yet</div>
+            <p class="expect">Holding is not rejecting: the plan should stay exactly as it is and the question stay open. Instead the reply is a generic "I can't see that one".</p>
+            <span class="chip c-gap">Gap</span>
+          </div>
+        </div>
+
+        <div class="case">
+          <div class="case-id">7.4</div>
+          <div class="case-body">
+            <div class="say">call it Autumn Push</div>
+            <p class="expect">Naming the campaign. Sent at Step 5 it re-lists the audience options instead of taking the name and carrying on.</p>
+            <span class="chip c-gap">Gap</span>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ============================ GAPS ============================ -->
+    <section class="step closing" id="gaps">
+      <h2>Known gaps</h2>
+      <ul>
+        <li><strong>1.5 — an unsold creative length stops mid-sentence.</strong> It names the lengths that are sold and then ends, without asking which to use.</li>
+        <li><strong>1.10 — an impression target ends the turn early.</strong> The card and the currency note arrive, but the offer to look at inventory does not.</li>
+        <li><strong>2.9 — "which is cheapest" does not rank.</strong> It prints the rate card, uses the market code rather than its name, and repeats the "needs curation" label on a channel whose real problem is no deal in this market.</li>
+        <li><strong>3.5 — "both" against a long list.</strong> Meaningful for two or three options, meaningless for eleven; the reply should say which it is rather than failing to parse.</li>
+        <li><strong>5.3 — the mock only knows some postcodes.</strong> SW1A resolves, EC2A and N1 do not. This is fixture data, not agent logic, and should disappear against real VOW.</li>
+        <li><strong>5.8 — a bare exclusion does not forecast.</strong> Recorded and read back, but no numbers follow and Step 5's question does not return.</li>
+        <li><strong>Q.11 — a complaint about the reach is not read as one.</strong> "that reach feels low" should open the repair loop and instead reports that nothing changed.</li>
+        <li><strong>7.3 — holding reads as an unknown question.</strong> "not yet" routes correctly but has no reply written for it.</li>
+        <li><strong>7.4 — naming the campaign mid-flow.</strong> The name is not taken and the turn re-lists whatever was last on screen.</li>
+        <li><strong>Steps 9–13 are not built.</strong> Creative upload, platform approval, tracking, credit check and activation. Creation is where this flow currently ends, which is why the reply says the strategy is not running yet.</li>
+      </ul>
+    </section>
+
+  </main>
+</div>
